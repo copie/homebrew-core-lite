@@ -1,0 +1,56 @@
+class Xonsh < Formula
+  include Language::Python::Virtualenv
+
+  desc "Python-powered, cross-platform, Unix-gazing shell language and command prompt"
+  homepage "https://xon.sh"
+  url "https://files.pythonhosted.org/packages/60/d8/c225b0bf992a18403051ea5a9e59f1c14287b07a771ed7acb0ef1578ffe8/xonsh-0.23.3.tar.gz"
+  sha256 "8ba220d5e8a645e9feffa4037acfa18034d6c2bb3aec6cbe8e826c989802b618"
+  license "BSD-2-Clause-Views"
+  head "https://github.com/xonsh/xonsh.git", branch: "main"
+
+  bottle do
+    sha256 cellar: :any_skip_relocation, arm64_tahoe:   "119555f31742160cb4003ea25e0d10c7a919b8c6af8073c3ec0e4354b8bcae19"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "56af509e16635aa126a9cabe262a63be442e7f83e355e2eef12a541d95b6f165"
+    sha256 cellar: :any_skip_relocation, arm64_sonoma:  "db1d4fd954c77958e11a3c8245c3fa1c30e258941208875c771bede96fc7d981"
+    sha256 cellar: :any_skip_relocation, sonoma:        "1e061630831d38e88d5d1128196cb9020079a372ce4396af3174b767be2cd5d5"
+    sha256 cellar: :any_skip_relocation, arm64_linux:   "bfd9741ba3dcfd28aff6baed70fffbae81f334dd401e998d8a1831b4c174dfa0"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "69de4201c5d7dba800404046ae984a9e8f0cb98c39d759997846999fcdcbc6be"
+  end
+
+  depends_on "python@3.14"
+
+  pypi_packages package_name: "xonsh[ptk,pygments,proctitle]"
+
+  resource "prompt-toolkit" do
+    url "https://files.pythonhosted.org/packages/a1/96/06e01a7b38dce6fe1db213e061a4602dd6032a8a97ef6c1a862537732421/prompt_toolkit-3.0.52.tar.gz"
+    sha256 "28cde192929c8e7321de85de1ddbe736f1375148b02f2e17edd840042b1be855"
+  end
+
+  resource "pygments" do
+    url "https://files.pythonhosted.org/packages/c3/b2/bc9c9196916376152d655522fdcebac55e66de6603a76a02bca1b6414f6c/pygments-2.20.0.tar.gz"
+    sha256 "6757cd03768053ff99f3039c1a36d6c0aa0b263438fcab17520b30a303a82b5f"
+  end
+
+  resource "pyperclip" do
+    url "https://files.pythonhosted.org/packages/e8/52/d87eba7cb129b81563019d1679026e7a112ef76855d6159d24754dbd2a51/pyperclip-1.11.0.tar.gz"
+    sha256 "244035963e4428530d9e3a6101a1ef97209c6825edab1567beac148ccc1db1b6"
+  end
+
+  resource "setproctitle" do
+    url "https://files.pythonhosted.org/packages/8d/48/49393a96a2eef1ab418b17475fb92b8fcfad83d099e678751b05472e69de/setproctitle-1.3.7.tar.gz"
+    sha256 "bc2bc917691c1537d5b9bca1468437176809c7e11e5694ca79a9ca12345dcb9e"
+  end
+
+  resource "wcwidth" do
+    url "https://files.pythonhosted.org/packages/35/a2/8e3becb46433538a38726c948d3399905a4c7cabd0df578ede5dc51f0ec2/wcwidth-0.6.0.tar.gz"
+    sha256 "cdc4e4262d6ef9a1a57e018384cbeb1208d8abbc64176027e2c2455c81313159"
+  end
+
+  def install
+    virtualenv_install_with_resources
+  end
+
+  test do
+    assert_match "4", shell_output("#{bin}/xonsh -c 2+2")
+  end
+end
