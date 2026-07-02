@@ -1,0 +1,114 @@
+class MetaPackageManager < Formula
+  include Language::Python::Virtualenv
+  include Language::Python::Shebang
+
+  desc "Wrapper around all package managers with a unifying CLI"
+  homepage "https://kdeldycke.github.io/meta-package-manager/"
+  url "https://files.pythonhosted.org/packages/88/8c/3a64fc201514510d906e7a9a37fc8f2d935f62aa939e2f9caa324d820e4a/meta_package_manager-7.0.1.tar.gz"
+  sha256 "4de3ba0d4da7de0bd29cc3a824c2e328d3098440a2391e78b29ee9c605629510"
+  license "GPL-2.0-or-later"
+  head "https://github.com/kdeldycke/meta-package-manager.git", branch: "main"
+
+  bottle do
+    sha256 cellar: :any_skip_relocation, arm64_tahoe:   "a88fd74d12adfa5b641e2fbc89a8872fc21ba252a6c341be3aab05602ef0ac26"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia: "a88fd74d12adfa5b641e2fbc89a8872fc21ba252a6c341be3aab05602ef0ac26"
+    sha256 cellar: :any_skip_relocation, arm64_sonoma:  "a88fd74d12adfa5b641e2fbc89a8872fc21ba252a6c341be3aab05602ef0ac26"
+    sha256 cellar: :any_skip_relocation, sonoma:        "fa7f7076319c8a641194b1408b429270643e609008c13d17be3afdfe958dc239"
+    sha256 cellar: :any_skip_relocation, arm64_linux:   "cf237afe33750f6ce4d9a6bb7fd45e2a313a715552ca3fd3c3baa0cf8bbfa5c9"
+    sha256 cellar: :any_skip_relocation, x86_64_linux:  "cf237afe33750f6ce4d9a6bb7fd45e2a313a715552ca3fd3c3baa0cf8bbfa5c9"
+  end
+
+  depends_on "rust" => :build
+
+  depends_on "certifi" => :no_linkage
+  depends_on "libyaml"
+  depends_on "python@3.14"
+  depends_on "rpds-py" => :no_linkage
+
+  uses_from_macos "libxml2"
+  uses_from_macos "libxslt"
+
+  pypi_packages exclude_packages: ["certifi", "rpds-py"]
+
+  resource "boltons" do
+    url "https://files.pythonhosted.org/packages/7a/1f/60df922ae497d838c58b48caa518251e2c8e228d7fe93792fee69a3858d6/boltons-26.0.0.tar.gz"
+    sha256 "5566d6cfd5a1e873d8e8476496287a9f92979964611ad9a9cecb6b0ef29b1edd"
+  end
+
+  resource "bracex" do
+    url "https://files.pythonhosted.org/packages/63/9a/fec38644694abfaaeca2798b58e276a8e61de49e2e37494ace423395febc/bracex-2.6.tar.gz"
+    sha256 "98f1347cd77e22ee8d967a30ad4e310b233f7754dbf31ff3fceb76145ba47dc7"
+  end
+
+  resource "click" do
+    url "https://files.pythonhosted.org/packages/76/d4/81420972a676e8ffea40450d8c8c92943e7218a78fe9b64359836cc9876b/click-8.4.2.tar.gz"
+    sha256 "9a6cea6e60b17ebe0a44c5cc636d94f09bd66142c1cd7d8b4cd731c4917a15f6"
+  end
+
+  resource "click-extra" do
+    url "https://files.pythonhosted.org/packages/b0/96/bb6ab6d01a5e3ed728f627988e931dc2179c0ef76ac0eab06add0ce2f015/click_extra-8.1.4.tar.gz"
+    sha256 "342e8194749278e7ce78c5f28f0c2fcfa935534150dc8a4d8021229870768449"
+  end
+
+  resource "cloup" do
+    url "https://files.pythonhosted.org/packages/42/ca/cf02e965cfeb70d65c61fd3abb8022aaf5111a0de71b3c73a6ec2113aa25/cloup-3.1.0.tar.gz"
+    sha256 "637c1e628fe98f3f20a5e44da591a72b42bf54d7d4527190bf39ed5f64af7585"
+  end
+
+  resource "deepmerge" do
+    url "https://files.pythonhosted.org/packages/2a/78/6e9e20106224083cfb817d2d3c26e80e72258d617b616721a169b87081e0/deepmerge-2.1.0.tar.gz"
+    sha256 "07ca7a7b8935df596c512fa8161877c0487ac61f691c07766e7d71d2b23bdd2f"
+  end
+
+  resource "extra-platforms" do
+    url "https://files.pythonhosted.org/packages/9f/4d/b793283bf4d002e7ffa8ad45c125f1f2306b238c0a641677d6b3a7397f1a/extra_platforms-13.0.1.tar.gz"
+    sha256 "2194e5cd8d58fbbba42d2810f15fea3da072020109998ca8d7ec938abcf59717"
+  end
+
+  resource "packageurl-python" do
+    url "https://files.pythonhosted.org/packages/f5/d6/3b5a4e3cfaef7a53869a26ceb034d1ff5e5c27c814ce77260a96d50ab7bb/packageurl_python-0.17.6.tar.gz"
+    sha256 "1252ce3a102372ca6f86eb968e16f9014c4ba511c5c37d95a7f023e2ca6e5c25"
+  end
+
+  resource "tabulate" do
+    url "https://files.pythonhosted.org/packages/46/58/8c37dea7bbf769b20d58e7ace7e5edfe65b849442b00ffcdd56be88697c6/tabulate-0.10.0.tar.gz"
+    sha256 "e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d"
+  end
+
+  resource "tomli-w" do
+    url "https://files.pythonhosted.org/packages/19/75/241269d1da26b624c0d5e110e8149093c759b7a286138f4efd61a60e75fe/tomli_w-1.2.0.tar.gz"
+    sha256 "2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021"
+  end
+
+  resource "wcmatch" do
+    url "https://files.pythonhosted.org/packages/79/3e/c0bdc27cf06f4e47680bd5803a07cb3dfd17de84cde92dd217dcb9e05253/wcmatch-10.1.tar.gz"
+    sha256 "f11f94208c8c8484a16f4f48638a85d771d9513f4ab3f37595978801cb9465af"
+  end
+
+  resource "wcwidth" do
+    url "https://files.pythonhosted.org/packages/49/b4/51fe890511f0f242d07cb1ebe6a5b6db417262b9d2568b460347c57d95cc/wcwidth-0.8.1.tar.gz"
+    sha256 "faf5b4a5366a72dc49cad48cdf21f52bdf63bdda995178e483ba247ff79089b9"
+  end
+
+  resource "xmltodict" do
+    url "https://files.pythonhosted.org/packages/19/70/80f3b7c10d2630aa66414bf23d210386700aa390547278c789afa994fd7e/xmltodict-1.0.4.tar.gz"
+    sha256 "6d94c9f834dd9e44514162799d344d815a3a4faec913717a9ecbfa5be1bb8e61"
+  end
+
+  def install
+    rewrite_shebang detected_python_shebang, "meta_package_manager/bar_plugin.py"
+    virtualenv_install_with_resources
+
+    generate_completions_from_executable(bin/"mpm", shell_parameter_format: :click)
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/mpm --version")
+
+    # Check mpm is detecting brew and report it as a manager in a table row.
+    assert_match "brew,Homebrew Formulae,✓,✓",
+      shell_output("#{bin}/mpm --table-format csv --all-managers managers")
+    # Check mpm is reporting itself as installed via brew in a table row.
+    assert_match "meta-package-manager,,brew,#{version}", shell_output("#{bin}/mpm --table-format csv installed")
+  end
+end
