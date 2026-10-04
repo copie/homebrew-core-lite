@@ -1,0 +1,31 @@
+class Keychain < Formula
+  include Language::Python::Virtualenv
+
+  desc "User-friendly front-end to ssh-agent(1)"
+  homepage "https://www.funtoo.org/Keychain"
+  url "https://github.com/danielrobbins/keychain/archive/refs/tags/3.0.6.tar.gz"
+  sha256 "a58b1fced1cdec63aa21d0e077dfccbe64c36dfe3921bd5cc08c30f67ed6685b"
+  license "GPL-3.0-only"
+
+  livecheck do
+    url :stable
+    regex(/^v?(\d+(?:\.\d+)+)$/i)
+  end
+
+  bottle do
+    sha256 cellar: :any_skip_relocation, all: "71a37f48f76bcd906a3d6610771c0f5792147bb711329a98c8efa0d4a3fbb1f3"
+  end
+
+  depends_on "python@3.14"
+
+  def install
+    virtualenv_install_with_resources
+  end
+
+  test do
+    system bin/"keychain"
+    hostname = shell_output("hostname").chomp
+    assert_match "SSH_AGENT_PID", File.read(testpath/".keychain/#{hostname}-sh")
+    system bin/"keychain", "--stop", "mine"
+  end
+end

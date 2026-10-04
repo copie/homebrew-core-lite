@@ -1,0 +1,77 @@
+class OpenclawCli < Formula
+  desc "Your own personal AI assistant"
+  homepage "https://openclaw.ai/"
+  url "https://registry.npmjs.org/openclaw/-/openclaw-2026.9.7.tgz"
+  sha256 "1b4746d9dfe1768e73da849e824172140f1a71b6edde3f7625f70477a73f83f7"
+  license "MIT"
+
+  bottle do
+    sha256               arm64_golden_gate: "ebdb181823e2bf164600ddab2a7ec68289d7167d782897c03c863771c84c1705"
+    sha256               arm64_tahoe:       "ebdb181823e2bf164600ddab2a7ec68289d7167d782897c03c863771c84c1705"
+    sha256               arm64_sequoia:     "ebdb181823e2bf164600ddab2a7ec68289d7167d782897c03c863771c84c1705"
+    sha256 cellar: :any, arm64_linux:       "fb245ee9edac6a522e0ceb8be5cb2dd9220a7893568148ac1d224f3e9ba13d5c"
+    sha256 cellar: :any, x86_64_linux:      "d6666be0432522f17e57f8fdbadd35dcb641c7a77710c111aba47a25c93d8bee"
+  end
+
+  depends_on "node"
+
+  on_linux do
+    depends_on "libxcb"
+  end
+
+  def install
+    system "npm", "install", *std_npm_args
+    bin.install_symlink libexec.glob("bin/*")
+
+    # `--ignore-scripts` leaves a marker that makes the launcher write into the read-only keg
+    system "node", libexec/"lib/node_modules/openclaw/scripts/postinstall-bundled-plugins.mjs"
+
+    node_modules = libexec/"lib/node_modules/openclaw/node_modules/"
+
+    # sqlite-vec falls back cleanly when the native extension is unavailable.
+    # Remove macOS pre-built dylibs that fail Homebrew bottle linkage fixups.
+    node_modules.glob("sqlite-vec-darwin-*").each { |dir| rm_r(dir) } if OS.mac?
+
+    # Remove incompatible pre-built binaries (non-native architectures
+    # and GPU variants requiring CUDA/Vulkan)
+    arch = Hardware::CPU.arm? ? "arm64" : "x64"
+    target = "#{OS.linux? ? "linux" : "mac"}-#{arch}"
+
+    node_modules.glob("tree-sitter-bash/prebuilds/*").each do |dir|
+      rm_r(dir) if dir.basename.to_s != target
+    end
+
+    node_modules.glob("@node-llama-cpp/*").each do |dir|
+      basename = dir.basename.to_s
+      next if basename.start_with?(target) &&
+              basename.exclude?("cuda") &&
+              basename.exclude?("vulkan")
+
+      rm_r(dir)
+    end
+
+    os = OS.kernel_name.downcase
+    node_modules.glob("@earendil-works/pi-tui/native/**/prebuilds/*").each do |dir|
+      basename = dir.basename.to_s
+      rm_r(dir) if basename != "#{os}-#{arch}"
+    end
+
+    # Rebuild the X11 clipboard helper against our `libxcb`
+    system "bash", node_modules/"@earendil-works/pi-tui/native/linux/build.sh" if OS.linux?
+
+    # koffi binaries moved to `@koromix/koffi-*`, which also ships a musl build
+    node_modules.glob("@koromix/koffi-*/*").each do |dir|
+      rm_r(dir) if dir.directory? && dir.basename.to_s != "#{os}_#{arch}"
+    end
+
+    # Unusable prebuilt: patching it for X11 rpaths or thinning the fat Mach-O breaks its pinned digest
+    node_modules.glob("@trycua/cua-driver-*").each { |dir| rm_r(dir) }
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/openclaw --version")
+
+    output = shell_output("#{bin}/openclaw status")
+    assert_match "OpenClaw status", output
+  end
+end
