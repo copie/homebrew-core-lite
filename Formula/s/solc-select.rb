@@ -1,0 +1,76 @@
+class SolcSelect < Formula
+  include Language::Python::Virtualenv
+
+  desc "Manage multiple Solidity compiler versions"
+  homepage "https://github.com/crytic/solc-select"
+  url "https://files.pythonhosted.org/packages/62/89/51e614fdbf26f47268c18f8a3b6cf1cb67c9a8b48b7b7231c948cae97814/solc_select-1.2.0.tar.gz"
+  sha256 "ad0a7afcae05061ce5e7632950b1fa0193ba9eaf05e4956f86effee024c6fb07"
+  license "AGPL-3.0-only"
+  revision 5
+  head "https://github.com/crytic/solc-select.git", branch: "dev"
+
+  bottle do
+    sha256 cellar: :any_skip_relocation, arm64_golden_gate: "dcd444c503fe48bc0f82f5ee1262425501e23a9e08c9e4e2ffe0fd58ab91e2d8"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe:       "7e21f8fb0ecfca55625e9fc0342faa4f9bf090ae716c28f1f4e60ed51a1d68bc"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia:     "e18da01b24d61c9f4564add1e0792e114689d8a83167dc43f2f84fcf4046f912"
+    sha256 cellar: :any,                 arm64_linux:       "62c378f598113eba70a630d960802f1dcfa9ee1d2a54997815681c8a79874328"
+    sha256 cellar: :any,                 x86_64_linux:      "5e20fc1a22c02d1d892cea1b78c8b2b2eaf0ffcb65cca86252c8a913d86e15fb"
+  end
+
+  depends_on "certifi" => :no_linkage
+  depends_on "python@3.14"
+
+  conflicts_with "solidity", because: "both install `solc` binaries"
+
+  pypi_packages exclude_packages: "certifi"
+
+  resource "charset-normalizer" do
+    url "https://files.pythonhosted.org/packages/33/1c/f41d4e74c28ab327ff3acd36053f7ea506c55872d7a90b0fa71aa3ab0c89/charset_normalizer-3.5.2.tar.gz"
+    sha256 "39de2a259fc954455c57274dc94c79d5842774e1247a016aff30bc0efed0f4ef"
+  end
+
+  resource "idna" do
+    url "https://files.pythonhosted.org/packages/f5/08/8eea9d4b8302028f3abb2c0813953f7aec26d33b7a8960ed760e65ff29fa/idna-3.20.tar.gz"
+    sha256 "a7db850025b95ded1eae8a46181a1a6c56c92c96f0e2b005d9ff8dc0210cab44"
+  end
+
+  resource "packaging" do
+    url "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz"
+    sha256 "94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79"
+  end
+
+  resource "pycryptodome" do
+    url "https://files.pythonhosted.org/packages/8e/a6/8452177684d5e906854776276ddd34eca30d1b1e15aa1ee9cefc289a33f5/pycryptodome-3.23.0.tar.gz"
+    sha256 "447700a657182d60338bab09fdb27518f8856aecd80ae4c6bdddb67ff5da44ef"
+  end
+
+  resource "requests" do
+    url "https://files.pythonhosted.org/packages/ac/c3/e2a2b89f2d3e2179abd6d00ebd70bff6273f37fb3e0cc209f48b39d00cbf/requests-2.34.2.tar.gz"
+    sha256 "f288924cae4e29463698d6d60bc6a4da69c89185ad1e0bcc4104f584e960b9ed"
+  end
+
+  resource "urllib3" do
+    url "https://files.pythonhosted.org/packages/e3/05/b17359e1cefb4f909b5e40b1b90a496d987258916dbbf88e842c729f510e/urllib3-2.8.0.tar.gz"
+    sha256 "63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63"
+  end
+
+  def install
+    virtualenv_install_with_resources
+  end
+
+  test do
+    system bin/"solc-select", "install", "0.5.7"
+    system bin/"solc-select", "install", "0.8.0"
+    system bin/"solc-select", "use", "0.5.7"
+
+    assert_match(/0\.5\.7.*current/, shell_output("#{bin}/solc-select versions"))
+
+    # running solc itself requires an Intel system or Rosetta
+    return if Hardware::CPU.arm?
+
+    assert_match("0.5.7", shell_output("#{bin}/solc --version"))
+    with_env(SOLC_VERSION: "0.8.0") do
+      assert_match("0.8.0", shell_output("#{bin}/solc --version"))
+    end
+  end
+end
