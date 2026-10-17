@@ -1,0 +1,102 @@
+class Qtsvg < Formula
+  desc "Classes for displaying the contents of SVG files"
+  homepage "https://www.qt.io/"
+  url "https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtsvg-everywhere-src-6.12.0.tar.xz"
+  mirror "https://qt.mirror.constant.com/archive/qt/6.12/6.12.0/submodules/qtsvg-everywhere-src-6.12.0.tar.xz"
+  mirror "https://mirrors.ukfast.co.uk/sites/qt.io/archive/qt/6.12/6.12.0/submodules/qtsvg-everywhere-src-6.12.0.tar.xz"
+  sha256 "e4ab39534ec97987b1b9b60ef7f4d3253d5912a69f8c713a01753174a4029331"
+  license all_of: [
+    { any_of: ["LGPL-3.0-only", "GPL-2.0-only", "GPL-3.0-only"] },
+    "BSD-3-Clause", # *.cmake
+  ]
+  compatibility_version 1
+  head "https://code.qt.io/qt/qtsvg.git", branch: "dev"
+
+  livecheck do
+    formula "qtbase"
+  end
+
+  bottle do
+    sha256 cellar: :any, arm64_golden_gate: "766966ea0536727b4c153d4cf8bec16a769bace7a0620557c7433e9675940592"
+    sha256 cellar: :any, arm64_tahoe:       "58aa1b5e16895e651a1d54bea91b783f1cd67a94201ac25bd815289fa08c6471"
+    sha256 cellar: :any, arm64_sequoia:     "6afb926d84442e565b251aec3231e8237178e1a9ef86da5f5dffe145b1aab73a"
+    sha256 cellar: :any, arm64_linux:       "6c7eee50f07137f754546614e814f7772478a65cc5bba7daa7acefafdf21f25d"
+    sha256 cellar: :any, x86_64_linux:      "58efe3465920a58733ab210bc5f9cd5b8e25c622ad36f226a083d943e289c3ee"
+  end
+
+  depends_on "cmake" => [:build, :test]
+  depends_on "ninja" => :build
+  depends_on "pkgconf" => :test
+
+  depends_on "qtbase"
+
+  on_linux do
+    depends_on "zlib-ng-compat"
+  end
+
+  conflicts_with "qt@5", because: "both link conflicting binaries"
+
+  def install
+    args = ["-DCMAKE_STAGING_PREFIX=#{prefix}"]
+    args << "-DQT_NO_APPLE_SDK_AND_XCODE_CHECK=ON" if OS.mac?
+
+    system "cmake", "-S", ".", "-B", "build", "-G", "Ninja",
+                    *args, *std_cmake_args(install_prefix: HOMEBREW_PREFIX, find_framework: "FIRST")
+    system "cmake", "--build", "build"
+    system "cmake", "--install", "build"
+
+    # Some config scripts will only find Qt in a "Frameworks" folder
+    frameworks.install_symlink lib.glob("*.framework") if OS.mac?
+  end
+
+  test do
+    (testpath/"CMakeLists.txt").write <<~CMAKE
+      cmake_minimum_required(VERSION 4.0)
+      project(test VERSION 1.0.0 LANGUAGES CXX)
+      find_package(Qt6 REQUIRED COMPONENTS Svg)
+      add_executable(test main.cpp)
+      target_link_libraries(test PRIVATE Qt6::Svg)
+    CMAKE
+
+    (testpath/"test.pro").write <<~QMAKE
+      QT      += svg
+      TARGET   = test
+      CONFIG  += console
+      CONFIG  -= app_bundle
+      TEMPLATE = app
+      SOURCES += main.cpp
+    QMAKE
+
+    (testpath/"main.cpp").write <<~CPP
+      #undef QT_NO_DEBUG
+      #include <QImageReader>
+      #include <QtSvg>
+
+      int main(void) {
+        QSvgGenerator generator;
+        const auto &list = QImageReader::supportedImageFormats();
+        Q_ASSERT(list.contains("svg"));
+        Q_ASSERT(list.contains("svgz"));
+        return 0;
+      }
+    CPP
+
+    ENV["LC_ALL"] = "en_US.UTF-8"
+    ENV["QT_QPA_PLATFORM"] = "minimal" if OS.linux? && ENV["HOMEBREW_GITHUB_ACTIONS"]
+
+    system "cmake", "-S", ".", "-B", "cmake"
+    system "cmake", "--build", "cmake"
+    system "./cmake/test"
+
+    ENV.delete "CPATH" if OS.mac?
+    mkdir "qmake" do
+      system formula_opt_bin("qtbase")/"qmake", testpath/"test.pro"
+      system "make"
+      system "./test"
+    end
+
+    flags = shell_output("pkgconf --cflags --libs Qt6Svg").chomp.split
+    system ENV.cxx, "-std=c++17", "main.cpp", "-o", "test", *flags
+    system "./test"
+  end
+end

@@ -1,0 +1,77 @@
+class Qtdeclarative < Formula
+  desc "QML, Qt Quick and several related modules"
+  homepage "https://www.qt.io/"
+  url "https://download.qt.io/official_releases/qt/6.12/6.12.0/submodules/qtdeclarative-everywhere-src-6.12.0.tar.xz"
+  mirror "https://qt.mirror.constant.com/archive/qt/6.12/6.12.0/submodules/qtdeclarative-everywhere-src-6.12.0.tar.xz"
+  mirror "https://mirrors.ukfast.co.uk/sites/qt.io/archive/qt/6.12/6.12.0/submodules/qtdeclarative-everywhere-src-6.12.0.tar.xz"
+  sha256 "311f3a2603e1973bb59baef9dfa740a376de713157d4782ee043681e889c9260"
+  license all_of: [
+    { any_of: ["LGPL-3.0-only", "GPL-2.0-only", "GPL-3.0-only"] },
+    { "GPL-3.0-only" => { with: "Qt-GPL-exception-1.0" } }, # qml
+    "BSD-2-Clause", # masm
+    "BSD-3-Clause", # *.cmake
+  ]
+  compatibility_version 1
+  head "https://code.qt.io/qt/qtdeclarative.git", branch: "dev"
+
+  livecheck do
+    formula "qtbase"
+  end
+
+  bottle do
+    sha256 cellar: :any, arm64_golden_gate: "32b56e37e126972bd7b7ea6a72c03d6d7cd13c7bf443e1b92686d03b9ee22905"
+    sha256 cellar: :any, arm64_tahoe:       "f6f2784b95036390a5fb6455d0e0880915ab0f085fb91d40d769bb78c2261773"
+    sha256 cellar: :any, arm64_sequoia:     "4bd05d020e8d337c8b356d4e5a7fc88876afd3848db1f5714442b6afc729c3a9"
+    sha256 cellar: :any, arm64_linux:       "30eb56ea24c024991a15ed8bbdea82535163084560b333ec7b9d79c1e7863756"
+    sha256 cellar: :any, x86_64_linux:      "21796791458d598c72da626bd80c8b37adae7864b73a4bd812842ad947c9a393"
+  end
+
+  depends_on "cmake" => :build
+  depends_on "ninja" => :build
+  depends_on "qtlanguageserver" => :build
+  depends_on "qtshadertools" => :build
+  depends_on "vulkan-headers" => :build
+
+  depends_on "qtbase"
+  depends_on "qtsvg"
+
+  uses_from_macos "python" => :build
+
+  conflicts_with "qt@5", because: "both link conflicting binaries"
+
+  def install
+    args = ["-DCMAKE_STAGING_PREFIX=#{prefix}"]
+    args << "-DQT_NO_APPLE_SDK_AND_XCODE_CHECK=ON" if OS.mac?
+
+    system "cmake", "-S", ".", "-B", "build", "-G", "Ninja",
+                    *args, *std_cmake_args(install_prefix: HOMEBREW_PREFIX, find_framework: "FIRST")
+    system "cmake", "--build", "build"
+    system "cmake", "--install", "build"
+
+    return unless OS.mac?
+
+    # Some config scripts will only find Qt in a "Frameworks" folder
+    frameworks.install_symlink lib.glob("*.framework")
+
+    # Remove non-executable file used for signing app
+    rm(bin/"qml.entitlements")
+  end
+
+  test do
+    # https://github.com/qt/qtdeclarative/blob/dev/tests/auto/qml/qqmlapplicationengine/testapp/immediateQuit.qml
+    (testpath/"immediateQuit.qml").write <<~QML
+      import QtQml
+      import QtQuick
+      QtObject {
+        Component.onCompleted: {
+          console.log("End: " + Qt.application.arguments[1]);
+          Qt.quit()
+        }
+      }
+    QML
+
+    ENV["LC_ALL"] = "en_US.UTF-8"
+    ENV["QT_QPA_PLATFORM"] = "minimal" if OS.linux?
+    assert_match "qml: End: immediateQuit.qml", shell_output("#{bin}/qml immediateQuit.qml 2>&1")
+  end
+end
