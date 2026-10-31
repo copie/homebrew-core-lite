@@ -1,0 +1,59 @@
+class MongoCDriverAT1 < Formula
+  desc "C driver for MongoDB"
+  homepage "https://github.com/mongodb/mongo-c-driver"
+  url "https://github.com/mongodb/mongo-c-driver/archive/refs/tags/1.30.14.tar.gz"
+  sha256 "4603a75b7433c00acd10d51ac9c9429a8e73d2f2aefda87b8a81e6abd5bda124"
+  license "Apache-2.0"
+
+  livecheck do
+    url :stable
+    regex(/^v?(1(?:\.\d+)+)$/i)
+  end
+
+  bottle do
+    sha256 cellar: :any, arm64_golden_gate: "994cdb46503abb27bca4884342d5987a7b9fb51be205f8db3a562bd5b42382e5"
+    sha256 cellar: :any, arm64_tahoe:       "ff9493d24bb8add1bca2441efc9f6a597f191dfaa5617d1ddab504fb7c964934"
+    sha256 cellar: :any, arm64_sequoia:     "56f32dc5d50eee67ddd0697fc16a7dcd7b507f6ea4df280f069993a2b0bc1f74"
+    sha256 cellar: :any, arm64_linux:       "4e4c29f8bb625a9277c72d3e9e895b08b60a08b7fff0eaf615a3ae0740d80197"
+    sha256 cellar: :any, x86_64_linux:      "deb85f8d93880fde53f4be5c33c0b43d44fb27dcc547d3161c44c6944ffbc506"
+  end
+
+  keg_only :versioned_formula
+
+  deprecate! date: "2026-04-01", because: :unmaintained
+  disable! date: "2027-04-01", because: :unmaintained
+
+  depends_on "cmake" => :build
+  depends_on "pkgconf" => :build
+  depends_on "sphinx-doc" => :build
+  depends_on "zstd"
+
+  on_linux do
+    depends_on "openssl@4"
+    depends_on "zlib-ng-compat"
+  end
+
+  def install
+    File.write "VERSION_CURRENT", version.to_s
+    inreplace "src/libmongoc/src/mongoc/mongoc-config.h.in", "@MONGOC_CC@", ENV.cc
+
+    system "cmake", "-S", ".", "-B", "build", "-DCMAKE_INSTALL_RPATH=#{rpath}", *std_cmake_args
+    system "cmake", "--build", "build"
+    system "cmake", "--install", "build"
+
+    (pkgshare/"libbson").install "src/libbson/examples"
+    (pkgshare/"libmongoc").install "src/libmongoc/examples"
+  end
+
+  test do
+    system ENV.cc, "-o", "test", pkgshare/"libbson/examples/json-to-bson.c",
+      "-I#{include}/libbson-1.0", "-L#{lib}", "-lbson-1.0"
+    (testpath/"test.json").write('{"name": "test"}')
+    assert_match "\u0000test\u0000", shell_output("./test test.json")
+
+    system ENV.cc, "-o", "test", pkgshare/"libmongoc/examples/mongoc-ping.c",
+      "-I#{include}/libmongoc-1.0", "-I#{include}/libbson-1.0",
+      "-L#{lib}", "-lmongoc-1.0", "-lbson-1.0"
+    assert_match "No suitable servers", shell_output("./test mongodb://0.0.0.0 2>&1", 3)
+  end
+end

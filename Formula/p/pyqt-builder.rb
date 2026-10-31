@@ -1,0 +1,45 @@
+class PyqtBuilder < Formula
+  include Language::Python::Virtualenv
+
+  desc "Tool to build PyQt"
+  homepage "https://pyqt-builder.readthedocs.io/"
+  url "https://files.pythonhosted.org/packages/0a/19/d3dd62568bc69cd4b854f6a8607d3081aebe3b0c915230c3c11c9676930e/pyqt_builder-1.20.3.tar.gz"
+  sha256 "be65ff822a75d020fafc0edcaf9fd79b7e3f145a00995a177c98c3286a5f85d5"
+  license "BSD-2-Clause"
+  compatibility_version 1
+  head "https://github.com/Python-PyQt/PyQt-builder.git", branch: "main"
+
+  bottle do
+    sha256 cellar: :any_skip_relocation, all: "e23659a7ef5e49e28cb9fe2db5b798c1fd4e823aa69fafdf347e72ceeddb1a20"
+  end
+
+  depends_on "python@3.15"
+
+  resource "packaging" do
+    url "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz"
+    sha256 "94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79"
+  end
+
+  resource "setuptools" do
+    url "https://files.pythonhosted.org/packages/70/b3/c19426f783614d625699a4b247faf628ea9ab1db228674491767b417f9e1/setuptools-84.2.1.tar.gz"
+    sha256 "3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc"
+  end
+
+  resource "sip" do
+    url "https://files.pythonhosted.org/packages/c9/16/50c3758ae06375796dde6c94592f1bdd80a1ca709f776a09fd763682280d/sip-6.17.2.tar.gz"
+    sha256 "f9e3e765b662b1a93a57440efd3f99a4001bf1bfe282fc0e24566d8d6122de3c"
+  end
+
+  def install
+    venv = virtualenv_install_with_resources
+
+    # Modify the path sip-install writes in scripts as we install into a
+    # virtualenv but expect dependents to run with path to Python formula
+    inreplace venv.site_packages/"sipbuild/builder.py", /\bsys\.executable\b/, "\"#{python3}\""
+  end
+
+  test do
+    system bin/"pyqt-bundle", "-V"
+    system libexec/"bin/python", "-c", "import pyqtbuild"
+  end
+end
