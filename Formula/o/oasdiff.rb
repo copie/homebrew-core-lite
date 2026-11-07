@@ -1,0 +1,57 @@
+class Oasdiff < Formula
+  desc "OpenAPI Diff and Breaking Changes"
+  homepage "https://www.oasdiff.com/"
+  url "https://github.com/oasdiff/oasdiff/archive/refs/tags/v1.35.0.tar.gz"
+  sha256 "976468914e9b36d1daeca3336841e55249b3af7bf2aabb29bd2c8ed768e8ddd0"
+  license "Apache-2.0"
+  head "https://github.com/oasdiff/oasdiff.git", branch: "main"
+
+  # Livecheck against GitHub latest releases is necessary because there was a v1.6.0 release after v2.1.2.
+  livecheck do
+    url :stable
+    strategy :github_latest
+  end
+
+  bottle do
+    sha256 cellar: :any_skip_relocation, arm64_golden_gate: "f500e324dcf87c6a5dd54a09cd599c529550583e957a126b1ba2a947a58adbbb"
+    sha256 cellar: :any_skip_relocation, arm64_tahoe:       "f500e324dcf87c6a5dd54a09cd599c529550583e957a126b1ba2a947a58adbbb"
+    sha256 cellar: :any_skip_relocation, arm64_sequoia:     "f500e324dcf87c6a5dd54a09cd599c529550583e957a126b1ba2a947a58adbbb"
+    sha256 cellar: :any_skip_relocation, arm64_linux:       "4fe47e3cf7d327bc034f7ae03936e1307febcbd85ac0d40c1e9c61884de50c68"
+    sha256 cellar: :any,                 x86_64_linux:      "90db747686dcd58e26038c5e251a19572fd20e10540d9dd427a781d77458834e"
+  end
+
+  depends_on "go" => :build
+
+  resource "homebrew-openapi-test1.yaml", :test do
+    url "https://raw.githubusercontent.com/oasdiff/oasdiff/8fdb99634d0f7f827810ee1ba7b23aa4ada8b124/data/openapi-test1.yaml"
+    sha256 "f98cd3dc42c7d7a61c1056fa5a1bd3419b776758546cf932b03324c6c1878818"
+  end
+
+  resource "homebrew-openapi-test5.yaml", :test do
+    url "https://raw.githubusercontent.com/oasdiff/oasdiff/8fdb99634d0f7f827810ee1ba7b23aa4ada8b124/data/openapi-test5.yaml"
+    sha256 "07e872b876df5afdc1933c2eca9ee18262aeab941dc5222c0ae58363d9eec567"
+  end
+
+  allow_network_access! :test
+
+  def fetch
+    system "go", "mod", "download"
+  end
+
+  def install
+    ldflags = "-X github.com/oasdiff/oasdiff/build.Version=#{version}"
+    system "go", "build", *std_go_args(ldflags:)
+
+    generate_completions_from_executable(bin/"oasdiff", shell_parameter_format: :cobra)
+  end
+
+  test do
+    testpath.install resource("homebrew-openapi-test1.yaml")
+    testpath.install resource("homebrew-openapi-test5.yaml")
+
+    expected = "[api-path-removed-without-deprecation]"
+    assert_match expected, shell_output("#{bin}/oasdiff changelog openapi-test1.yaml openapi-test5.yaml")
+
+    assert_match version.to_s, shell_output("#{bin}/oasdiff --version")
+  end
+end
