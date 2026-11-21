@@ -1,0 +1,32 @@
+class CloudflareWrangler < Formula
+  desc "CLI tool for Cloudflare Workers"
+  homepage "https://developers.cloudflare.com/workers/"
+  url "https://registry.npmjs.org/wrangler/-/wrangler-4.165.0.tgz"
+  sha256 "6ed6353df1491c4e86db67499666d995ee42bac44f4f20d2b26bd5e6acb55663"
+  license any_of: ["Apache-2.0", "MIT"]
+
+  bottle do
+    sha256 cellar: :any, arm64_golden_gate: "51faf592962c633581c23217661734cbc3bff4db6e06530f43bcde9fe6b55c7f"
+    sha256 cellar: :any, arm64_tahoe:       "51faf592962c633581c23217661734cbc3bff4db6e06530f43bcde9fe6b55c7f"
+    sha256 cellar: :any, arm64_sequoia:     "51faf592962c633581c23217661734cbc3bff4db6e06530f43bcde9fe6b55c7f"
+    sha256 cellar: :any, arm64_linux:       "8e643a54f0c12334866b63c8f9ffe9fa2bca88e768387348c452d7b66608873c"
+    sha256 cellar: :any, x86_64_linux:      "6640511d2a82943c8696c803c46187ab387ae401963b22a43eaa1f607b29f7a7"
+  end
+
+  depends_on "node"
+
+  def install
+    system "npm", "install", *std_npm_args
+    bin.install_symlink Dir["#{libexec}/bin/wrangler*"]
+
+    node_modules = libexec/"lib/node_modules/wrangler/node_modules"
+    deuniversalize_machos node_modules/"fsevents/fsevents.node" if OS.mac?
+
+    generate_completions_from_executable(bin/"wrangler", "complete", shells: [:bash, :zsh, :fish, :pwsh])
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/wrangler -v")
+    assert_match "Required Worker name missing", shell_output("#{bin}/wrangler secret list 2>&1", 1)
+  end
+end
