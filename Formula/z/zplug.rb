@@ -1,0 +1,38 @@
+class Zplug < Formula
+  desc "Next-generation plugin manager for zsh"
+  homepage "https://github.com/zplug/zplug/"
+  url "https://github.com/zplug/zplug/archive/refs/tags/2.4.2.tar.gz"
+  sha256 "82a51e8c388844acbfb64196623bede07eee2384f1fc30966eac880373aa9030"
+  license "MIT"
+  head "https://github.com/zplug/zplug.git", branch: "main"
+
+  bottle do
+    rebuild 1
+    manifest_sha256 "e29f3c8129e0a9f3da500c7e232e082fcbe8f1c50760cd836429dbf3eb24742e"
+    sha256 cellar: :any_skip_relocation, all: "c99ea3312515bf7de844cbe43af641afebe319549ff5c8c719ccebff79810999"
+  end
+
+  uses_from_macos "zsh"
+
+  deny_network_access!
+
+  def install
+    bin.install Dir["bin/*"]
+    man1.install "doc/man/man1/zplug.1"
+    prefix.install Dir["*"]
+    touch prefix/"packages.zsh"
+  end
+
+  def caveats
+    <<~EOS
+      In order to use zplug, please add the following to your .zshrc:
+        export ZPLUG_HOME=#{opt_prefix}
+        source $ZPLUG_HOME/init.zsh
+    EOS
+  end
+
+  test do
+    ENV["ZPLUG_HOME"] = opt_prefix
+    system "zsh", "-c", "source #{opt_prefix}/init.zsh && (( $+functions[zplug] ))"
+  end
+end

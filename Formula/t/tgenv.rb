@@ -1,0 +1,33 @@
+class Tgenv < Formula
+  desc "Terragrunt version manager inspired by tfenv"
+  homepage "https://github.com/tgenv/tgenv"
+  url "https://github.com/tgenv/tgenv/archive/refs/tags/v1.3.0.tar.gz"
+  sha256 "cccf0d5714cf1156aaa9f451d98601afa3e7bb0b104eda61013a9a8849bee2fb"
+  license "MIT"
+  head "https://github.com/tgenv/tgenv.git", branch: "main"
+
+  bottle do
+    manifest_sha256 "0cfb59b2b492fdb35d955b90ccf4cae253c4b59dcf0ab1ae32ef7fa05b2dfb50"
+    sha256 cellar: :any_skip_relocation, all: "41d63971b87c2f8003c821f8cfc00eaf264acef2560a75c7e0dc631da4a726a6"
+  end
+
+  uses_from_macos "unzip"
+
+  conflicts_with "tenv", because: "tgenv symlinks terragrunt binaries"
+  conflicts_with "terragrunt", because: "tgenv symlinks terragrunt binaries"
+
+  allow_network_access! :test
+
+  def install
+    prefix.install %w[bin libexec]
+  end
+
+  test do
+    # `list-remote` caches the version list in `TGENV_ROOT`, by default the read-only keg
+    (testpath/"tgenv").install_symlink libexec
+    ENV["TGENV_ROOT"] = testpath/"tgenv"
+
+    assert_match "0.73.6", shell_output("#{bin}/tgenv list-remote 2>&1")
+    assert_match "0.73.6", (testpath/"tgenv/list_all_versions_offline").read
+  end
+end

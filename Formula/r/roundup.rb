@@ -1,0 +1,26 @@
+class Roundup < Formula
+  desc "Unit testing tool"
+  homepage "https://bmizerany.github.io/roundup"
+  url "https://github.com/bmizerany/roundup/archive/refs/tags/v0.0.6.tar.gz"
+  sha256 "20741043ed5be7cbc54b1e9a7c7de122a0dacced77052e90e4ff08e41736f01c"
+  license "MIT"
+  head "https://github.com/bmizerany/roundup.git", branch: "master"
+
+  bottle do
+    rebuild 1
+    manifest_sha256 "f5ec236553d40cd36d3ec3dc39dce74a5f8e6880baec4ca80282ccae5499eae3"
+    sha256 cellar: :any_skip_relocation, all: "8e7150a458867eba0d53eae749b908b7bb9f8f2d8838471025e4570aee54e846"
+  end
+
+  deny_network_access!
+
+  def install
+    system "./configure", "--prefix=#{prefix}", "--sysconfdir=#{etc}"
+    system "make", "SHELL=/bin/bash"
+    system "make", "install"
+  end
+
+  test do
+    system bin/"roundup", "-v"
+  end
+end
